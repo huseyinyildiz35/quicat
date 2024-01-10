@@ -1,6 +1,6 @@
 
 
-my_packages = c("shiny", "shinydashboard","readxl","shinythemes","catR","shinyBS","shinyjs","dplyr","shinydashboardPlus","ggplot2","DBI","dbplyr","RMySQL","writexl","shinyalert","shinyhelper")
+my_packages = c("shiny", "shinydashboard","readxl","shinythemes","catR","shinyBS","shinyWidgets","shinyjs","dplyr","shinydashboardPlus","ggplot2","DBI","dbplyr","RMySQL","writexl","shinyalert","shinyhelper")
 
 install_if_missing = function(p) {
   if (p %in% rownames(installed.packages()) == FALSE) {
