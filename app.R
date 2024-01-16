@@ -4,10 +4,11 @@ library(readxl)
 library(shinythemes)
 library(catR)
 library(shinyBS)
-library(shinyWidgets)
 library(shinyjs)
+library(googlesheets4)
 library(dplyr)
 library(shinydashboardPlus)
+library(shinyWidgets)
 library(ggplot2)
 library(DBI)
 library(dbplyr)
@@ -426,9 +427,9 @@ ui <- dashboardPage(
                                     hidden(div(id="resboxout",
                                                valueBoxOutput("participantBox",width=2),
                                                valueBoxOutput("meanabilityBox",width=2),
+                                               valueBoxOutput("userateBox",width=2),
                                                valueBoxOutput("meanseBox",width=2),
                                                valueBoxOutput("meanlengthBox",width=2),
-                                               valueBoxOutput("userateBox",width=2),
                                                valueBoxOutput("correct_rateBox",width=2),
                                                #valueBoxOutput("leastusedBox",width=2),
                                                column(width = 12,
@@ -494,7 +495,8 @@ ui <- dashboardPage(
                                              
                                                  h4("e-mail: akdogdueda@gmail.com")
                                                
-                                                 ))))))))
+                                                 )))
+                                  )))))
 
 server <- function(input, output,session) { 
 
@@ -511,11 +513,11 @@ server <- function(input, output,session) {
   report <- reactive({
 
     con <- dbConnect( RMySQL::MySQL(),
-                      dbname='sql12674552',
+                      dbname='sql12677239',
                       host='sql12.freesqldatabase.com',
                       port=3306,
-                      user="sql12674552",
-                      password='r1GkZvSmaC')
+                      user="sql12677239",
+                      password='U4FgGdbmYF')
     
     
     
@@ -539,7 +541,7 @@ server <- function(input, output,session) {
       C = numeric(),
       D = numeric(),
       E = numeric(),
-      key = character(),
+      key2 = character(),
       apar = numeric(),
       bpar = numeric(),
       stringsAsFactors = FALSE
@@ -559,29 +561,41 @@ server <- function(input, output,session) {
     banka<-as.data.frame(dataset)
    
     con <- dbConnect( RMySQL::MySQL(),
-                      dbname='sql12674552',
+                      dbname='sql12677239',
                       host='sql12.freesqldatabase.com',
                       port=3306,
-                      user="sql12674552",
-                      password='r1GkZvSmaC')
+                      user="sql12677239",
+                      password='U4FgGdbmYF')
      
      # tablo_ismi <- 'table'
     
-     if (dbExistsTable(con, paste(id(),'_bank',sep=""))) {
+    
       
         # Eğer tablo varsa, üzerine yaz
        
-       dbRemoveTable(con,  paste(id(),'_bank',sep=""))  # Mevcut tabloyu sil
-       dbWriteTable(con, name =  paste(id(),'_bank',sep=""), value = banka, row.names = FALSE,encoding = "UTF-8")
+      # dbRemoveTable(con,  paste(id(),'_bank',sep=""))  # Mevcut tabloyu sil
+       #dbWriteTable(con, name =  paste(id(),'_bank',sep=""), value = banka, row.names = FALSE,encoding = "UTF-8")
        
-     } else {
-       # Eğer tablo yoksa, yeni tablo oluştur
-       dbWriteTable(con, name =  paste(id(),'_bank',sep=""), value = banka, row.names = FALSE,encoding = "UTF-8")
        
-     }
-
-     dbDisconnect(con)
+       #column_types <- c(rep('VARCHAR(100)', 8), rep('DOUBLE(100)', 4)) # Son 4 sütun 'DOUBLE' olarak belirtiliyor.
+       
+       # Veritabanına tablo yazma işlemi
+       dbWriteTable(
+         conn = con,
+         name = paste(id(), '_bank', sep = ""),
+         value = banka,
+         row.names = FALSE,
+         overwrite = TRUE,
+        # field.types = column_types
+       )
+       
+     query<-  paste("ALTER TABLE ",id(),"_bank ","MODIFY COLUMN STEM VARCHAR(1000),MODIFY COLUMN A VARCHAR(100),MODIFY COLUMN B VARCHAR(100),MODIFY COLUMN C VARCHAR(100),MODIFY COLUMN D VARCHAR(100),MODIFY COLUMN E VARCHAR(100)", sep="")
      
+     result <- dbGetQuery(con, query)
+       
+       dbDisconnect(con)
+       
+   
      hide(id = c("template_tutorial_boxout"), anim = FALSE,animType = "slide",time = 1)
      
      # shinyjs::show(id = c("itembankinfo2"), anim = FALSE,animType = "slide",time = 1)
@@ -653,11 +667,11 @@ server <- function(input, output,session) {
     
     
     con <- dbConnect( RMySQL::MySQL(),
-                      dbname='sql12674552',
+                      dbname='sql12677239',
                       host='sql12.freesqldatabase.com',
                       port=3306,
-                      user="sql12674552",
-                      password='r1GkZvSmaC')
+                      user="sql12677239",
+                      password='U4FgGdbmYF')
     
 
     
@@ -689,6 +703,13 @@ server <- function(input, output,session) {
     }
     
  
+  })
+  
+  output$personres <- renderDataTable({
+    
+    data<-as.data.frame(report()[,1:8])
+    
+    data
   })
   
   observeEvent(input$create_bank_button,{
@@ -814,11 +835,11 @@ server <- function(input, output,session) {
     regex <- "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
     
     con <- dbConnect( RMySQL::MySQL(),
-                      dbname='sql12674552',
+                      dbname='sql12677239',
                       host='sql12.freesqldatabase.com',
                       port=3306,
-                      user="sql12674552",
-                      password='r1GkZvSmaC')
+                      user="sql12677239",
+                      password='U4FgGdbmYF')
     
     query <-  paste("SELECT * FROM users WHERE testid = '", input$testid, "'", sep = "")
     aa <- dbGetQuery(con, query)
@@ -835,12 +856,12 @@ server <- function(input, output,session) {
     
     if(input$password==input$password_confirm & grepl(regex, input$email) ){
     
-    con <- dbConnect( RMySQL::MySQL(),
-                      dbname='sql12674552',
-                      host='sql12.freesqldatabase.com',
-                      port=3306,
-                      user="sql12674552",
-                      password='r1GkZvSmaC')
+      con <- dbConnect( RMySQL::MySQL(),
+                        dbname='sql12677239',
+                        host='sql12.freesqldatabase.com',
+                        port=3306,
+                        user="sql12677239",
+                        password='U4FgGdbmYF')
     
     query <-  paste("SELECT * FROM users WHERE testid = '", input$testid, "'", sep = "")
     aa <- dbGetQuery(con, query)
@@ -878,11 +899,11 @@ server <- function(input, output,session) {
       distc VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
       distd VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
       diste VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-      correct_key VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-      apar VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-      bpar VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-      cpar VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-      dpar VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+      key2 VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+      apar DOUBLE,
+      bpar DOUBLE,
+      cpar DOUBLE,
+      dpar DOUBLE
     )",sep="" )
     
     
@@ -929,12 +950,12 @@ server <- function(input, output,session) {
   
   observeEvent(input$saveconfig,{
    
-     con <- dbConnect( RMySQL::MySQL(),
-                      dbname='sql12674552',
+    con <- dbConnect( RMySQL::MySQL(),
+                      dbname='sql12677239',
                       host='sql12.freesqldatabase.com',
                       port=3306,
-                      user="sql12674552",
-                      password='r1GkZvSmaC')
+                      user="sql12677239",
+                      password='U4FgGdbmYF')
     
     query <- paste("INSERT INTO ",id(),"_config"," ( start, selection, terminate,estimation,final_estimation,beforemessage,aftermessage, start1, start2,  terminate1,terminate2 ) VALUES ('",input$starttest,"','",input$itemselect,"','",input$terminate,"','",input$estimationrule,"','",input$finalestimation,"','",input$beforemessage,"','",input$aftermessage,"','",input$start1,"','",paste(input$start2,collapse='_'),"','",input$terminate1,"','",input$terminate2,"')",sep='')
     result<- dbSendQuery(con,query)
@@ -991,23 +1012,6 @@ server <- function(input, output,session) {
     
   })
   
-  observeEvent(input$getreport,{
-    
-    hide(id = c("reportboxout"), anim = FALSE,animType = "slide",time = 2)
-    
-    if(input$reportselect=="Summary Statistics"){
-      
-      shinyjs::show(id = c("resboxout"), anim = FALSE,animType = "slide",time = 2)
-    }
-    
-    else if(input$reportselect=="Results by Participants"){
-      
-      shinyjs::show(id = c("personresboxout"), anim = FALSE,animType = "slide",time = 2)
-      
-    }
-    
-  })
- 
   output$hist<-renderPlot({
     
     data<-as.data.frame(report())
@@ -1022,7 +1026,6 @@ server <- function(input, output,session) {
     
     items_sorted<-sort(unique(items),decreasing = F)
     
-    
     exposure<-c()
     
     Level<-c()
@@ -1030,27 +1033,30 @@ server <- function(input, output,session) {
       
       exposure[i]<-sum(items== items_sorted[i])/nrow(report())
       
-      if(sum(items==i)/nrow(report())<=0.5){
-        Level[i]<-"Low Exposure"
+      if(sum(items==items_sorted[i])/nrow(report())<=0.5){
+        Level[i]<-"<50% (Low)"
       }
-      else if(sum(items==i)/nrow(report()) > 0.5){
-        Level[i]<-"High Exposure"
+      else if(sum(items==items_sorted[i])/nrow(report()) > 0.5){
+        Level[i]<-">50% (High)"
       }
     }
     
     dat<-as.data.frame(cbind(items_sorted,exposure,Level))
+    #dat <- as.data.frame(cbind(items_sorted, exposure, Level))
     
-    dat$item<-as.numeric(dat$items_sorted)
-    dat$exposure<-as.numeric(dat$exposure)
+    dat$item <- as.character(dat$items_sorted)
+    dat$exposure <- as.numeric(dat$exposure)
+  
+    dat$color <- ifelse(dat$Level == ">50% (High)", "blue", "red")
     
-    ggplot(data=dat, mapping=aes(x=item,y=exposure, fill=Level))+
-      geom_bar(stat = "identity")+
-      geom_function(fun=function(x) 0.5,color="red",size=1,linetype="dashed")+
-      ggtitle("Item Exposure Rates")+
-      xlab("Item Number")+
-      ylab("Item Exposure Rates")
-    
-    
+    ggplot(data = dat, mapping = aes(x = item, y = exposure, fill = color)) +
+      geom_bar(stat = "identity") +
+      geom_function(fun = function(x) 0.5, color = "red", size = 1, linetype = "dashed") +
+      ggtitle("Item Exposure Rates") +
+      xlab("Item Number") +
+      ylab("Item Exposure Rates") +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+      scale_fill_manual(values = c("red", "blue"), guide = FALSE)
   })
   
   output$abilityhist<-renderPlot({
@@ -1109,40 +1115,6 @@ ort_sem<-colMeans(tablo,na.rm = T)
 
   })
   
-  # output$inputs <- renderUI({
-  #   if (input$show_inputs) {
-  #     fluidRow(
-  #       column(width = 12,
-  #              selectInput("select_number", "Choose Number of Contents:", choices = c(2, 3, 4, 5)),
-  #             column(width = 4,
-  #               uiOutput("text_inputs")),
-  #             column(width = 1),
-  #             column(width = 4,
-  #               uiOutput("probs")  
-  #                    
-  #                    )
-  #             
-  #       )
-  #     )
-  #   }
-  # })
-  # 
-  # output$text_inputs <- renderUI({
-  #   num <- as.integer(input$select_number)
-  #   text_inputs <- lapply(1:num, function(i) {
-  #     textInput(paste0("text_", i), label = paste("Content Name", i, ":"))
-  #   })
-  #   do.call(tagList, text_inputs)
-  # })
-  # 
-  # output$probs <- renderUI({
-  #   num <- as.integer(input$select_number)
-  #   probs <- lapply(1:num, function(i) {
-  #     textInput(paste0("text_", i), label = paste("Probability", i, ":"))
-  #   })
-  #   do.call(tagList, probs)
-  # })
-  # 
   output$participantBox <- renderValueBox({
     
     valueBox(
@@ -1202,26 +1174,14 @@ ort_sem<-colMeans(tablo,na.rm = T)
     
     data<-as.data.frame(report())
     
-    
-    a<-paste(report()$item_list,collapse = "-")
-    items<- strsplit(a,split = "-")
-    # items<-as.numeric(items[[1]])
-    sayi<-(length(unique(items))/20)*100
+    sayi<-sd(data$theta)
     
     valueBox(
-      paste("%",sayi), "Used Item Percentage", icon = icon("thumbs-up", lib = "glyphicon"),
+      paste(round(sayi,2)), "Standart Deviation of Abilities", icon = icon("thumbs-up", lib = "glyphicon"),
       color = "yellow"
     )
   })
   
-  output$personres <- renderDataTable({
-    
-    data<-as.data.frame(report()[,1:8])
-    
-    data<-
-    
-    data
-  })
   
   observeEvent(input$config_close ,{
     
